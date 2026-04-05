@@ -30,6 +30,7 @@ Executable single-step workflows. Each has a `SKILL.md` that Claude reads before
 
 | Skill | What it does |
 |-------|-------------|
+| `prd-discovery` | Run a structured pre-authoring interview to surface what is known, inferred, and unknown before writing a PRD |
 | `prd-author` | Create and edit Strategic PRDs from human-provided context |
 | `prd-taskmaster` | Derive executable tasks and client-facing views from a Strategic PRD |
 | `prd-validator` | Validate implementation against PRD requirements and guardrails |
@@ -179,6 +180,7 @@ profile: companies/your-company/COMPANY.md
 Open Claude Code in the repo directory and use skills directly:
 
 ```
+/prd-discovery       Run a pre-authoring interview before writing a new PRD
 /prd-author          Create a Strategic PRD for your product
 /prd-taskmaster      Break a PRD into executable tasks
 /prd-validator       Validate implementation against PRD requirements
@@ -187,6 +189,7 @@ Open Claude Code in the repo directory and use skills directly:
 
 Or use natural language:
 
+- "I have a rough idea — run discovery before we write the PRD"
 - "Write a PRD for the new onboarding flow"
 - "Break PRD-001 into tasks for R1"
 - "Validate this code against the PRD"
@@ -203,6 +206,7 @@ systems/           Methodology definitions
   prd/               PRD system
 
 skills/            Executable workflows (one SKILL.md each)
+  prd-discovery/     Pre-authoring interview — produces a Discovery Brief
   prd-author/        Create and edit Strategic PRDs
   prd-taskmaster/    Derive tasks from PRDs
   prd-validator/     Validate implementation against PRDs
