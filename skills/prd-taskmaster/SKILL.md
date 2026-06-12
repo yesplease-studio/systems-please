@@ -60,6 +60,8 @@ In expert mode: split without surfacing the reasoning unless the human asks. In 
 - **Cluster related requirements.** Multiple requirements that touch the same component can be one task. But don't create mega-tasks — if a task would take more than 48 hours, split it.
 - **`must` before `should` before `may`.** Priority within a phase follows severity.
 
+**Batch grouping (for orchestrated builds).** When the build will run as an orchestrated loop (see `systems/prd/SYSTEM.md` §7.4), additionally group tasks into **batches** — the unit the impl → validate → learn cycle operates on. A batch is 3-8 tasks that share a coherent slice of the system and, critically, **do not overlap in the files they touch with any batch that might run in parallel**. Note the expected file footprint per batch; the `prd-agent-brief` skill uses it to derive MAY-WRITE contracts. For non-orchestrated builds, skip batching — tasks go to the backlog individually.
+
 ### Step 3: Generate Task Definitions
 
 For each task, produce:
@@ -198,6 +200,8 @@ If the request maps to existing scope, generate the task definition and executio
 
 If the request needs clarification, use `AskUserQuestion` with specific questions — don't generate a task from ambiguous input.
 
+**Escalation routing:** when the project runs the build loop (`LOOP-STATE.md` exists), append scope conflicts, out-of-scope flags, and open-question blockers to the loop's decision queue (via the `prd-loop` skill) instead of interrupting one at a time. The `prd-decision-batch` skill packages them for review. Decisions that block the *current* batch still surface immediately.
+
 ---
 
 ## Workflow 3: Regenerating Task Contexts After PRD Amendment
@@ -266,8 +270,8 @@ This skill is called frequently — every new task, every client request, every 
 
 1. **Load selectively.** When mapping a client request, load only the PRD frontmatter and Section 5 (requirements) first. Only load other sections if needed for disambiguation.
 
-2. **Use sub-agents for formatting.** The decomposition logic (grouping requirements into tasks, determining dependencies) requires reasoning and should use a frontier model. But generating the execution view summaries and YAML task definitions from an already-determined decomposition can be delegated to a cheaper model.
+2. **Use sub-agents for formatting.** The decomposition logic (grouping requirements into tasks, determining dependencies) requires judgment and belongs in the orchestrating context. Generating the execution view summaries and YAML task definitions from an already-determined decomposition is mechanical — delegate it to the smallest model that formats reliably.
 
-3. **Cache task contexts.** Task contexts only need regeneration when the PRD changes. Between amendments, they're stable.
+3. **Cache task contexts.** Task contexts only need regeneration when the PRD changes. Between amendments, they're stable. For orchestrated builds, the project-level `CONTEXT-PACK.md` (see `prd-context-pack`) serves the same role one level up: agents read the pack plus their task context, never the full corpus.
 
 4. **Minimal task context payloads.** The whole point of task contexts is to avoid loading the full PRD per-task. A task context should typically be 30-60 lines of YAML — enough to build from, small enough to fit in any context window alongside the codebase.

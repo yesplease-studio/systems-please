@@ -33,9 +33,13 @@ Executable single-step workflows. Each has a `SKILL.md` that Claude reads before
 | `prd-onboard` | Set up prd-please for your company. Walks the COMPANY.md schema interactively, supports an in-repo profile or an external pointer, refers you to sibling please-family tools when a question is upstream of PRD scope |
 | `prd-discovery` | Run a structured pre-authoring interview to surface what is known, inferred, and unknown before writing a PRD |
 | `prd-author` | Create and edit Strategic PRDs from human-provided context |
-| `prd-taskmaster` | Derive executable tasks and client-facing views from a Strategic PRD |
-| `prd-validator` | Validate implementation against PRD requirements and guardrails |
+| `prd-taskmaster` | Derive executable tasks, batches, and client-facing views from a Strategic PRD |
+| `prd-validator` | Adversarially validate implementation against PRD requirements and guardrails — executes typechecks, builds, and tests rather than trusting self-reports |
 | `prd-learner` | Capture implementation learnings and propose PRD amendments |
+| `prd-loop` | Manage the build loop's externalized state (`LOOP-STATE.md`): batch pointer, debt counters, decision queue, workaround signatures |
+| `prd-context-pack` | Compile the project's frozen contracts into the single `CONTEXT-PACK.md` sub-agents read instead of the full corpus |
+| `prd-agent-brief` | Compose the invocation contract for impl/validator/learner sub-agents: file ownership, token budgets, report format |
+| `prd-decision-batch` | Replace one-at-a-time interruptions with a single ranked decision package |
 | `prd-to-aldente` | Translate a Strategic PRD into Al Dente build documentation |
 | `build-learner` | Capture build-phase learnings and propose amendments upstream or laterally |
 
@@ -47,7 +51,23 @@ Multi-step skill sequences defined in YAML. They chain skills together with cond
 |----------|-------------|
 | `prd-new-engagement` | Author a PRD, get approval, generate tasks |
 | `prd-post-build` | Validate, learn, amend, regenerate tasks |
+| `prd-build-loop` | One batch cycle of the orchestrated build loop: impl → validate → learn → apply → commit |
 | `prd-aldente-quickstart` | Author a PRD with Al Dente defaults, translate to build docs, generate tasks |
+
+### Execution loop
+
+For builds executed by AI sub-agents, prd-please ships an orchestration layer that runs the **impl → validate → learn → apply → commit** cycle batch by batch. The specification skills define *what* must be true; the loop is *how* agents build against it without drifting, colliding, or silently failing.
+
+The mechanics that make it safe:
+
+- **Externalized state.** `LOOP-STATE.md` holds the batch pointer, debt counters, fan-out registry, decision queue, and workaround signatures — the loop survives session boundaries because none of it lives in conversation context.
+- **Role-typed agents.** Three agent definitions ship in `.claude/agents/`: `impl` (writes within its declared contract), `validator` (read-only against source, executes build/typecheck/tests, adversarial by design), and `learner` (read-only, proposal-only). Claude Code picks them up automatically on clone.
+- **File-ownership contracts.** Every spawn declares MAY-WRITE / MAY-NOT-TOUCH lists, cross-checked against parallel agents before briefing — this is what makes fan-out safe.
+- **Honest degradation.** Agents that can't cross a seam degrade visibly (partial-by-design with a documented contract). Faked success is a hard fail, caught by the validator.
+- **Batched decisions.** Escalations queue in loop state and surface as one ranked package instead of a stream of interruptions.
+- **Workaround signatures.** The same workaround appearing three times triggers a generalizing-ADR proposal — the runtime complement to `prd-taskmaster`'s `adr_candidate` flag.
+
+The loop is modular: its contract source can be a Strategic PRD, an ADR set, a playbook, or any combination. Pairing it with a PRD closes the full learning circuit (impl notes → `prd-learner` → PRD amendment → regenerated context pack), but it runs without one. Full methodology: `systems/prd/SYSTEM.md` §7.4.
 
 ### Learning layer
 
@@ -220,11 +240,20 @@ skills/            Executable workflows (one SKILL.md each)
   prd-onboard/       Interactive setup — populates COMPANY.md and wires CLAUDE.md
   prd-discovery/     Pre-authoring interview — produces a Discovery Brief
   prd-author/        Create and edit Strategic PRDs
-  prd-taskmaster/    Derive tasks from PRDs
-  prd-validator/     Validate implementation against PRDs
+  prd-taskmaster/    Derive tasks and batches from PRDs
+  prd-validator/     Adversarially validate implementation against PRDs
   prd-learner/       Capture learnings and amend PRDs
+  prd-loop/          Manage build-loop state (LOOP-STATE.md)
+  prd-context-pack/  Compile frozen contracts into CONTEXT-PACK.md
+  prd-agent-brief/   Compose sub-agent invocation contracts
+  prd-decision-batch/ Emit ranked decision packages
   prd-to-aldente/    Translate PRDs into Al Dente build docs
   build-learner/     Capture build-phase learnings
+
+.claude/agents/    Role-typed sub-agent definitions for the build loop
+  impl.md            Implementation agent — writes within its file-ownership contract
+  validator.md       Validator agent — read-only, executes tests, adversarial
+  learner.md         Learner agent — read-only, proposal-only
 
 workflows/         Multi-step YAML sequences
   product/           PRD workflows + Al Dente integration

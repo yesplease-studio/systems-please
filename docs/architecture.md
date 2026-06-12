@@ -1,14 +1,14 @@
-# Systems Please — Architecture
+# PRD Please — Architecture
 
 ## What this document is
 
-A technical overview of how Systems Please is structured, why it's structured this way, and how the layers compose.
+A technical overview of how PRD Please is structured, why it's structured this way, and how the layers compose.
 
 ---
 
 ## The layered model
 
-Everything in Systems Please follows a pattern: there's a **methodology** (how to think about the problem), **skills** (how to execute the work), **company context** (who you're doing it for), and **workflows** (in what sequence).
+Everything in PRD Please follows a pattern: there's a **methodology** (how to think about the problem), **skills** (how to execute the work), **company context** (who you're doing it for), and **workflows** (in what sequence). For orchestrated builds, a fifth element — **agents** (who does the work) — runs the execution loop.
 
 ### Layer 1: Systems (the "how to think")
 
@@ -27,9 +27,13 @@ Skills are `SKILL.md` files — self-contained executable specifications that Cl
 | Skill | Purpose |
 |-------|---------|
 | `prd-author` | Create and edit Strategic PRDs from human-provided context |
-| `prd-taskmaster` | Derive executable tasks and client-facing views from a Strategic PRD |
-| `prd-validator` | Validate implementation against PRD requirements and guardrails |
+| `prd-taskmaster` | Derive executable tasks, batches, and client-facing views from a Strategic PRD |
+| `prd-validator` | Adversarially validate implementation against PRD requirements and guardrails — executes typechecks, builds, and tests |
 | `prd-learner` | Capture implementation learnings and propose PRD amendments |
+| `prd-loop` | Manage the build loop's externalized state (`LOOP-STATE.md`) |
+| `prd-context-pack` | Compile frozen contracts into the `CONTEXT-PACK.md` sub-agents read at spawn |
+| `prd-agent-brief` | Compose sub-agent invocation contracts (file ownership, token budgets, report formats) |
+| `prd-decision-batch` | Emit ranked decision packages from the loop's decision queue |
 | `prd-to-aldente` | Translate a Strategic PRD into Al Dente build documentation |
 | `build-learner` | Capture build-phase learnings and propose amendments upstream or laterally |
 
@@ -72,6 +76,20 @@ steps:
     inputs:
       prd: "{{steps.author.output}}"
 ```
+
+### Layer 5: Agents (the "who does it")
+
+For orchestrated builds, three role-typed agent definitions ship in `.claude/agents/` and are discovered automatically by Claude Code:
+
+| Agent | Permission envelope | Writes |
+|-------|--------------------|--------|
+| `impl` | Bash, Read, Write, Edit, Grep, Glob | Only files in its brief's MAY-WRITE list |
+| `validator` | Bash (build/typecheck/test execution), Read, Grep, Glob, Write | Only its validation report |
+| `learner` | Read, Grep, Glob, Write — no Bash | Only its LEARNINGS proposal file |
+
+The permission envelope is part of the role, not negotiated per spawn. The `prd-agent-brief` skill composes the per-spawn contract (task, file ownership, token budget, report format); the agent definition supplies the standing rules (honest degradation, adversarial verification, proposal-only synthesis).
+
+The execution loop's coordination state lives in derived files at the project scope — `LOOP-STATE.md` (batch pointer, debt counters, decision queue, workaround signatures) and `CONTEXT-PACK.md` (the curated contract set agents read instead of the full corpus). Both survive session boundaries; when conversation memory and file disagree, the file wins. See `systems/prd/SYSTEM.md` §7.4 for the full loop methodology.
 
 ---
 
@@ -127,7 +145,7 @@ YAML is human-readable, version-controllable, and Claude interprets it directly.
 
 ## Integration with build systems
 
-Systems Please owns *what to build*. Build systems (like [Al Dente](https://github.com/aline-no/aldente)) own *how to build it*. The integration boundary is clean: a translation skill maps PRD artifacts into the build system's expected format, and a learning skill feeds implementation experience back upstream.
+PRD Please owns *what to build*. Build systems (like [Al Dente](https://github.com/aline-no/aldente)) own *how to build it*. The integration boundary is clean: a translation skill maps PRD artifacts into the build system's expected format, and a learning skill feeds implementation experience back upstream. When the build phases are executed by AI sub-agents, the execution loop (Layer 5) orchestrates them batch by batch.
 
 ### The integration flow
 

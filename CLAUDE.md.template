@@ -51,6 +51,17 @@ If using the Al Dente build system integration:
 - `build-learner` — Capture implementation learnings during build phases. Proposes amendments upstream (to the PRD) or laterally (to the build docs).
 - Workflow: `workflows/product/prd-aldente-quickstart.yaml` — Combined flow: author PRD with Al Dente defaults → translate → generate tasks.
 
+### The build loop (orchestrated execution)
+
+When a build is executed by AI sub-agents, run it as the impl → validate → learn → apply → commit loop (`systems/prd/SYSTEM.md` §7.4):
+
+- `prd-loop` — Externalized loop state at `<project_scope>/LOOP-STATE.md`: batch pointer, debt counters, decision queue, workaround signatures. The file is canonical; conversation memory is not.
+- `prd-context-pack` — Compile frozen contracts into `CONTEXT-PACK.md`. Sub-agents read the pack, never the full PRD/ADR corpus. Regenerate after every applied amendment.
+- `prd-agent-brief` — Compose every sub-agent invocation: MAY-WRITE/MAY-NOT-TOUCH file ownership, token budget, structured report format. Never spawn from a hand-written prose brief.
+- `prd-decision-batch` — Batch queued decisions into one ranked package instead of interrupting one at a time.
+- Role-typed agents live in `.claude/agents/` (`impl`, `validator`, `learner`); spawn with the matching `subagent_type`.
+- Workflow: `workflows/product/prd-build-loop.yaml` — one batch cycle; repeat until the phase backlog is drained.
+
 ### Systems reference
 
 | System | Definition |
@@ -98,13 +109,16 @@ Each artifact-producing skill generates a parallel `<artifact>-companion.md` wit
 
 ## Please family
 
-prd-please is one of four please-family frameworks. When the work points beyond PRD authoring and execution, reach for a sibling.
+prd-please is one of seven please-family frameworks. When the work points beyond PRD authoring and execution, reach for a sibling.
 
 | Framework | What it does |
 |-----------|-------------|
 | [strategy-please](https://github.com/yesplease-studio/strategy-please) | Workshop recommendation engine — diagnoses strategic gaps and prescribes the right workshop to run |
 | [sales-please](https://github.com/yesplease-studio/sales-please) | Deal qualification — WORTH framework for deciding which deals deserve time |
 | [voice-please](https://github.com/yesplease-studio/voice-please) | Voice system — defines, encodes, and maintains how a company sounds |
+| [design-please](https://github.com/yesplease-studio/design-please) | Design system scoping — defines Look/Feel/Act direction and encodes it for handoff |
+| [name-please](https://github.com/yesplease-studio/name-please) | Name validation and generation grounded in ICP and voice context |
+| [messaging-please](https://github.com/yesplease-studio/messaging-please) | Messaging architecture — purpose, positioning, per-audience message matrix |
 
 ### When to suggest a sibling
 

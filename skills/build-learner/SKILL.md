@@ -47,7 +47,7 @@ The two skills complement each other. Use `prd-learner` when the issue is *what 
 
 Collect information about what happened during the build phase. Sources:
 
-1. **Build session history** — Review the recent agent session for: errors encountered, workarounds applied, deviations from the build docs, repeated attempts, and corrections.
+1. **Build session history** — Review the recent agent session for: errors encountered, workarounds applied, deviations from the build docs, repeated attempts, and corrections. If the build ran as an orchestrated loop, also read the `notes_for_learner` fields from impl agent reports and the Workaround signatures table in `LOOP-STATE.md` — a signature with count >= 3 is a generalizing-ADR candidate (see the `prd-learner` skill's "Workaround Signatures → Generalizing ADRs" section; the same mechanism applies here for implementation-level signatures).
 
 2. **Build phase documentation** — The build phase prompt or guide that was being followed (e.g., Al Dente's `prompt/05-db-flow.md`).
 
@@ -165,9 +165,9 @@ When adding a new learning, check existing `BL-XXX` entries for patterns:
 
 ---
 
-## Standalone Mode (Without Systems Please)
+## Standalone Mode (Without PRD Please)
 
-This skill can operate independently within a build system (e.g., the Al Dente repository) without a Systems Please PRD upstream. In standalone mode:
+This skill can operate independently within a build system (e.g., the Al Dente repository) without a PRD Please PRD upstream. In standalone mode:
 
 - **Skip Step 2's PRD loading.** There is no upstream PRD to check against.
 - **All learnings are lateral.** The only amendment targets are the build documentation and build-guide flags.
@@ -175,7 +175,7 @@ This skill can operate independently within a build system (e.g., the Al Dente r
 - **Learning entries use the same `BL-XXX` format** but omit the "Related requirements" field (no PRD requirement IDs to reference).
 - **The workflow is otherwise identical.** Gather context, classify, draft, present, apply.
 
-This mode allows the skill to be adopted by build system maintainers (e.g., dropped into the Al Dente repository) without requiring the full Systems Please methodology.
+This mode allows the skill to be adopted by build system maintainers (e.g., dropped into the Al Dente repository) without requiring the full PRD Please methodology.
 
 ---
 

@@ -17,5 +17,7 @@ outputs/
 .vscode/
 .idea/
 
-# Claude memory
-.claude/
+# Claude memory and local settings (agent role definitions ship with the repo)
+.claude/*
+!.claude/agents/
+!.claude/agents/**

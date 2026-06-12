@@ -31,11 +31,15 @@ A good learning results in a concrete change to the Strategic PRD: a new guardra
 
 Collect information about what happened. Sources, in order of preference:
 
-1. **Validation report** from `prd-validator` — if the learning was triggered by a validation failure, start here. The report identifies which requirements were unmet and why.
+1. **Validation report** from `prd-validator` — if the learning was triggered by a validation failure, start here. The report identifies which requirements were unmet and why. In the build loop, this is `<project_scope>/validation/<batch_id>-REPORT.md`.
 
-2. **Session transcript / conversation history** — review the recent agent session for: errors encountered, workarounds applied, repeated attempts, corrections, and patterns.
+2. **Impl agent reports** — the `notes_for_learner` field from each implementation sub-agent's structured report. This is the designated pipe for patterns and workarounds observed during building; sub-agents record them there precisely so this skill can consume them.
 
-3. **Human input** — if automated sources are insufficient, ask the human via `AskUserQuestion`:
+3. **Workaround signatures** — the Workaround signatures table in `LOOP-STATE.md`, if the project runs the build loop. Recurring signatures are the strongest signal this skill receives (see Pattern Detection below).
+
+4. **Session transcript / conversation history** — review the recent agent session for: errors encountered, workarounds applied, repeated attempts, corrections, and patterns.
+
+5. **Human input** — if automated sources are insufficient, ask the human via `AskUserQuestion`:
    - "What was the most surprising or time-consuming issue in this session?"
    - "Were there mistakes that a clearer requirement or guardrail could have prevented?"
    - "Did you discover any patterns that should be standardized?"
@@ -113,12 +117,17 @@ Show the human the proposed changes:
 | TECH-08 | must | All public endpoints implement rate limiting | Configurable per-endpoint; default 60 req/min; returns 429 with Retry-After header | R1 |
 [L-003]
 
+### Watchlist (below threshold — tracking)
+- Supabase client timeout on cold start: seen once this sprint. Not proposing yet; will promote if it recurs.
+
 ### No Action Needed
 - Agent timeout during build was environmental (CI runner resource limits), not a PRD gap.
 
 ### Patterns Observed
 - This is the second learning related to API security (see also L-001). Consider whether a dedicated security review step should be added to the build workflow.
 ```
+
+**Threshold discipline:** below-threshold signals (seen once, plausibly one-off) go to the Watchlist, never to Proposals. The Proposals section is for things ready to commit to as permanent rules. A learning report with empty Proposals and a populated Watchlist is a valid outcome — do not invent amendments to justify the run.
 
 **Wait for human approval before any changes are applied.**
 
@@ -132,7 +141,11 @@ Provide `prd-author` with:
 - The learning entries to add to Section 8.
 - The change summary format.
 
-After `prd-author` applies the changes, notify `prd-taskmaster` that affected task contexts may need regeneration.
+After `prd-author` applies the changes:
+
+- Notify `prd-taskmaster` that affected task contexts may need regeneration.
+- If the project has a `CONTEXT-PACK.md`, regenerate it via the `prd-context-pack` skill — amendments invalidate the pack.
+- If the project runs the build loop, update `LOOP-STATE.md` via the `prd-loop` skill: decrement Learner debt and Apply debt, increment workaround signature counts for any signatures this run identified, and mark `Generalizing ADR proposed? = yes` on any signature whose ADR proposal was approved.
 
 ---
 
@@ -160,6 +173,15 @@ When adding a new learning, check Section 8 for related entries. If this is the 
 > "This is the third learning related to API security (L-001, L-003, L-005). This pattern suggests the PRD may need a dedicated security requirements subsection or that security should be elevated as a cross-cutting concern."
 
 Pattern detection helps the human decide whether a more fundamental PRD restructuring is needed, rather than just incremental patches.
+
+### Workaround Signatures → Generalizing ADRs
+
+When the project runs the build loop, `LOOP-STATE.md` tracks **workaround signatures** — the shape of a workaround, recorded the second time it appears (the first looks like a one-off; the second is the signal). This skill is the consumer of that table:
+
+- **Count = 2:** note the recurrence in the learning report's Watchlist. Not yet a proposal.
+- **Count >= 3:** propose a **generalizing ADR** — a rule that would obviate the workaround class entirely. Include: the signature, occurrences across batches, the recommended scope of the rule, a one-paragraph sketch, and what future work it unblocks. Route the proposal through the standard approval path; once approved, it becomes an ADR via `archgate adr create` (or an import, if a registry pack covers it — see `systems/prd/SYSTEM.md` §8.2).
+
+This is the runtime complement to `prd-taskmaster`'s `adr_candidate` flag: taskmaster predicts which decisions need enforcement before building starts; signature tracking catches the ones that only reveal themselves during the build.
 
 ### Escalation
 

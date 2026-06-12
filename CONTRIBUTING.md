@@ -1,6 +1,6 @@
-# Contributing to Systems Please
+# Contributing to PRD Please
 
-Thank you for your interest in improving Systems Please. This project is maintained by [Yes Please Studio](https://yesplease.studio) and welcomes contributions from the community.
+Thank you for your interest in improving PRD Please. This project is maintained by [Yes Please Studio](https://yesplease.studio) and welcomes contributions from the community.
 
 ## What's welcome
 

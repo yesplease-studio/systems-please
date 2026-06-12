@@ -1,0 +1,90 @@
+name: prd-build-loop
+description: |
+  One batch cycle of the orchestrated build loop:
+  impl → validate → learn → apply → commit.
+  Repeat the workflow per batch until the phase's task backlog is drained.
+  Requires an active Strategic PRD with a derived task backlog (or another
+  declared contract source — an ADR set or playbook — for PRD-less builds).
+
+company: active
+context_files:
+  - companies/{{company}}/COMPANY.md
+
+steps:
+  - id: loop-state
+    skill: prd-loop
+    inputs:
+      project_scope: "{{context.project_scope}}"
+    notes: |
+      Initialize LOOP-STATE.md if this is the first cycle; otherwise read it.
+      If learner debt + apply debt >= ceiling, STOP — drain debt before
+      starting a new batch (run from the validate or learn step instead).
+
+  - id: context-pack
+    skill: prd-context-pack
+    inputs:
+      project_scope: "{{context.project_scope}}"
+    condition: "pack missing or older than the latest PRD/ADR edit"
+    notes: |
+      Compile the current frozen contracts into CONTEXT-PACK.md.
+      Never spawn an agent that has to read the full corpus.
+
+  - id: brief-impl
+    skill: prd-agent-brief
+    inputs:
+      role: impl
+      batch: "{{context.batch_id}}"
+      context_pack: "{{context.project_scope}}/CONTEXT-PACK.md"
+    notes: |
+      Compose the impl brief: MAY-WRITE/MAY-NOT-TOUCH from the batch's file
+      footprint, token budget, success criteria from the tasks' acceptance
+      criteria. Spawn via the Agent tool with subagent_type: impl.
+
+  - id: validate
+    skill: prd-validator
+    inputs:
+      batch: "{{context.batch_id}}"
+      impl_report: "{{steps.brief-impl.report}}"
+    output: "{{context.project_scope}}/validation/{{context.batch_id}}-REPORT.md"
+    notes: |
+      Loop mode: build the AC checklist (incl. cross-cutting checks), brief a
+      validator agent via prd-agent-brief, interpret the report.
+      On fail: phase stays at validate — re-brief impl or escalate.
+      HARD-FAIL / CONTRACT-VIOLATION surface to the human immediately.
+
+  - id: learn
+    skill: prd-learner
+    inputs:
+      batch: "{{context.batch_id}}"
+      validation_report: "{{steps.validate.output}}"
+      impl_notes: "{{steps.brief-impl.report.notes_for_learner}}"
+    output: "{{context.project_scope}}/learnings/{{context.batch_id}}-LEARNINGS.md"
+    notes: |
+      Proposal-only synthesis: PRD/ADR amendments, rule generalizations,
+      workaround signature updates. Generalizing-ADR candidates at
+      signature count >= 3.
+
+  - id: human-approval
+    skill: prd-decision-batch
+    notes: |
+      APPROVAL GATE — batch the learner's proposals together with any queued
+      decisions into one ranked package. The human approves, modifies, or
+      rejects per item. Do not advance the loop while decisions are open.
+
+  - id: apply-amendments
+    skill: prd-author
+    inputs:
+      mode: edit
+      amendments: "{{steps.learn.output}}"
+    condition: "{{steps.human-approval.approved}}"
+    notes: |
+      Apply approved amendments to the Strategic PRD (and route approved
+      ADR changes to archgate). Then regenerate CONTEXT-PACK.md via
+      prd-context-pack and update debt counters via prd-loop.
+
+  - id: commit
+    skill: none
+    notes: |
+      Checkpoint commit by the orchestrator (sub-agents never commit).
+      Update the batch pointer to the next batch via prd-loop, drop
+      completed fan-out rows, and start the next cycle.

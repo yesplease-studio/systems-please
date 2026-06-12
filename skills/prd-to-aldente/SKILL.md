@@ -5,7 +5,7 @@ description: Translate a completed Strategic PRD into Al Dente documentation tem
 
 # Skill: prd-to-aldente
 
-**Purpose:** Take a completed Strategic PRD and generate the 7 documentation templates that Al Dente's 11-phase build workflow consumes. This is the bridge between *what to build* (Systems Please) and *how to build it* (Al Dente).
+**Purpose:** Take a completed Strategic PRD and generate the 7 documentation templates that Al Dente's 11-phase build workflow consumes. This is the bridge between *what to build* (PRD Please) and *how to build it* (Al Dente).
 
 ---
 
@@ -172,7 +172,7 @@ Wait for the user to review before writing.
 
 ### Step 5: Write Output
 
-**Default location:** `outputs/aldente-docs/` within the Systems Please workspace.
+**Default location:** `outputs/aldente-docs/` within the PRD Please workspace.
 
 **If an Al Dente project path is specified:** Write directly into its `docs/` directory, overwriting existing templates.
 
